@@ -9,6 +9,10 @@ tokens {
 }
   
 // ********** numeric rules **********
+// a number between 13 and 31 inclusive
+int_13_to_31
+  : (int_13_to_23 | int_24_to_31) -> INT[$int_13_to_31.text]
+  ;
 
 // a number between 00 and 59 inclusive, with a mandatory 0 prefix before numbers 0-9
 int_00_to_59_mandatory_prefix

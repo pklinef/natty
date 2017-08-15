@@ -120,7 +120,7 @@ public class Parser {
             Iterator<Token> iter = tokens.iterator();
             while(iter.hasNext()) {
               Token token = iter.next();
-              if(!DateParser.FOLLOW_empty_in_parse186.member(token.getType())) {
+              if(!DateParser.FOLLOW_empty_in_parse196.member(token.getType())) {
                 iter.remove();
               }
               else {
@@ -274,7 +274,7 @@ public class Parser {
       if(currentGroup == null) {
         // skip over white space and known tokens that cannot be the start of a date
         if(currentTokenType != DateLexer.WHITE_SPACE &&
-            DateParser.FOLLOW_empty_in_parse186.member(currentTokenType)) {
+            DateParser.FOLLOW_empty_in_parse196.member(currentTokenType)) {
 
           currentGroup = new ArrayList<Token>();
           currentGroup.add(currentToken);

@@ -312,6 +312,15 @@ public class WalkerState {
       }
     }
   }
+
+  public void setAmbiguousDate(String firstDayOrMonth, String secondDayOrMonth, String year) {
+    // TODO set state that date is ambigous between DMY or MDY
+    setExplicitDate(firstDayOrMonth, secondDayOrMonth, null, year);
+  }
+
+  public void setDmyDate(String dayOfMonth, String month, String year) {
+    setExplicitDate(month, dayOfMonth, null, year);
+  }
   
   /**
    * Sets the the time of day

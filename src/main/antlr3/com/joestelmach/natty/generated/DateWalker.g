@@ -66,6 +66,8 @@ date_time
 date
   : relative_date 
   | explicit_date
+  | ambiguous_date
+  | dmy_date
   ;
   
 relative_date
@@ -82,7 +84,19 @@ explicit_date
         (^(DAY_OF_WEEK dow=INT))? (^(YEAR_OF year=INT))?)
     {_walkerState.setExplicitDate($month.text, $dom.text, $dow.text, $year.text);}
   ;
-  
+
+ambiguous_date
+  : ^(AMBIGUOUS_DATE ^(AMBIGUOUS_VALUE value1=INT) ^(AMBIGUOUS_VALUE value2=INT)
+        ^(YEAR_OF year=INT))
+    {_walkerState.setAmbiguousDate($value1.text, $value2.text, $year.text);}
+;
+
+dmy_date
+  : ^(EXPLICIT_DATE ^(DAY_OF_MONTH dom=INT) ^(MONTH_OF_YEAR month=INT)
+        ^(YEAR_OF year=INT))
+    {_walkerState.setDmyDate($month.text, $dom.text, $year.text);}
+;
+
 time
   : explicit_time
   | relative_time

@@ -34,6 +34,8 @@ tokens {
   RECURRENCE;
   HOLIDAY;
   SEASON;
+  AMBIGUOUS_VALUE;
+  AMBIGUOUS_DATE;
 }
 
 @header {
@@ -85,11 +87,13 @@ time_date_separator
   ;
 
 date
-  : formal_date
+  : ambiguous_date
+  | dmy_date
+  | formal_date
   | relaxed_date
   | relative_date
   | explicit_relative_date
-  | global_date_prefix WHITE_SPACE date 
+  | global_date_prefix WHITE_SPACE date
       -> ^(RELATIVE_DATE ^(SEEK global_date_prefix date))
   ;
   
@@ -332,9 +336,26 @@ relaxed_year
 relaxed_year_prefix
   : (COMMA WHITE_SPACE? | WHITE_SPACE) (IN WHITE_SPACE THE WHITE_SPACE YEAR WHITE_SPACE)?
   ; 
-  
-// ********** formal date rules **********
 
+// ********** ambiguous date rules **********
+ambiguous_date
+  // first two positions both below 13
+  : ambiguous_month_or_day formal_date_separator ambiguous_month_or_day formal_date_separator formal_year
+    -> ^(AMBIGUOUS_DATE ambiguous_month_or_day ambiguous_month_or_day formal_year)
+  ;
+
+ambiguous_month_or_day
+  : int_01_to_12_optional_prefix -> ^(AMBIGUOUS_VALUE int_01_to_12_optional_prefix)
+  ;
+
+// ********** DMY date rules **********
+dmy_date
+  // day/month/year
+  : partial_formal_day_of_month formal_date_separator formal_month_of_year formal_date_separator formal_year
+    -> ^(EXPLICIT_DATE formal_month_of_year partial_formal_day_of_month formal_year)
+  ;
+
+// ********** formal date rules **********
 formal_date
   // march 2009
   : (relaxed_month WHITE_SPACE relaxed_year)=>
@@ -344,10 +365,14 @@ formal_date
   // year first: 1979-02-28, 1980/01/02, etc.  full 4 digit year required to match
   | relaxed_day_of_week? formal_year_four_digits formal_date_separator (formal_month_of_year | relaxed_month) formal_date_separator formal_day_of_month
       -> ^(EXPLICIT_DATE formal_month_of_year? relaxed_month? formal_day_of_month relaxed_day_of_week? formal_year_four_digits)
-      
-  // year last: 1/02/1980, 2/28/79.  2 or 4 digit year is acceptable 
-  | relaxed_day_of_week? formal_month_of_year formal_date_separator formal_day_of_month (formal_date_separator formal_year)?
-      -> ^(EXPLICIT_DATE formal_month_of_year formal_day_of_month relaxed_day_of_week? formal_year?)
+
+  // year last: 1/02/1980, 2/28/79.  2 or 4 digit year is acceptable
+  | relaxed_day_of_week? formal_month_of_year formal_date_separator partial_formal_day_of_month formal_date_separator formal_year
+      -> ^(EXPLICIT_DATE formal_month_of_year partial_formal_day_of_month relaxed_day_of_week? formal_year)
+
+  // 3/4
+  | relaxed_day_of_week? formal_month_of_year formal_date_separator formal_day_of_month
+      -> ^(EXPLICIT_DATE formal_month_of_year formal_day_of_month relaxed_day_of_week?)
 
   // 15-Apr-2014
   | formal_day_of_month formal_date_separator relaxed_month (formal_date_separator formal_year_four_digits)?
@@ -357,16 +382,20 @@ formal_date
 formal_month_of_year
   : int_01_to_12_optional_prefix -> ^(MONTH_OF_YEAR int_01_to_12_optional_prefix)
   ;
-  
+
 formal_day_of_month
   : int_01_to_31_optional_prefix -> ^(DAY_OF_MONTH int_01_to_31_optional_prefix)
   ;
-  
+
+partial_formal_day_of_month
+  : int_13_to_31 -> ^(DAY_OF_MONTH int_13_to_31)
+  ;
+
 formal_year
   : formal_year_four_digits
   | int_00_to_99_mandatory_prefix -> ^(YEAR_OF int_00_to_99_mandatory_prefix)
   ;
-  
+
 formal_year_four_digits
   : int_four_digits -> ^(YEAR_OF int_four_digits)
   ; 
@@ -382,24 +411,24 @@ relative_date
   // next wed, last month
   : relative_date_prefix WHITE_SPACE relative_target (WHITE_SPACE spelled_or_int_optional_prefix WHITE_SPACE relative_date_span)*
       -> ^(RELATIVE_DATE ^(SEEK relative_date_prefix relative_target) ^(SEEK DIRECTION[">"] SEEK_BY["by_day"] spelled_or_int_optional_prefix relative_date_span)*)
-      
+
   // this month, this week
-  | implicit_prefix WHITE_SPACE relative_target 
+  | implicit_prefix WHITE_SPACE relative_target
       -> ^(RELATIVE_DATE ^(SEEK implicit_prefix relative_target))
-      
+
   // monday, tuesday
   | day_of_week
       // relative target with no prefix has an implicit seek of 0
       -> ^(RELATIVE_DATE ^(SEEK DIRECTION[">"] SEEK_BY["by_day"] INT["0"] day_of_week))
-      
+
   // january, february
   | relaxed_month
       -> ^(RELATIVE_DATE ^(SEEK DIRECTION[">"] SEEK_BY["by_day"] INT["0"] relaxed_month))
-      
+
   // one month from now
   | spelled_or_int_optional_prefix WHITE_SPACE relative_target WHITE_SPACE relative_date_suffix
       -> ^(RELATIVE_DATE ^(SEEK relative_date_suffix spelled_or_int_optional_prefix relative_target))
-            
+
   | one=spelled_or_int_optional_prefix WHITE_SPACE relative_target (WHITE_SPACE two+=spelled_or_int_optional_prefix WHITE_SPACE relative_date_span)+ WHITE_SPACE relative_date_suffix
       -> ^(RELATIVE_DATE ^(SEEK relative_date_suffix $one relative_target) ^(SEEK relative_date_suffix $two relative_date_span)*)
 
@@ -410,19 +439,19 @@ relative_date
   // the week after next
   | (THE WHITE_SPACE)? relative_date_span WHITE_SPACE AFTER WHITE_SPACE NEXT
       -> ^(RELATIVE_DATE ^(SEEK DIRECTION[">"] SEEK_BY["by_day"] INT["2"] relative_date_span))
-      
+
   // today, tomorrow
-  | named_relative_date 
-  
+  | named_relative_date
+
   // next christmas, 2 thanksgivings ago
   | holiday
     -> ^(RELATIVE_DATE holiday)
-    
+
   // next fall, 2 summers from now
-  | season 
+  | season
     -> ^(RELATIVE_DATE season)
   ;
-  
+
 // ********** explicit relative date rules **********
 // these represent explicit points within a relative range
 

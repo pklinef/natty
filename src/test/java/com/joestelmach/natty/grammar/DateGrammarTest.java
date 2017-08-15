@@ -85,9 +85,26 @@ public class DateGrammarTest extends AbstractGrammarTest {
   
     assertAST("2009-10-10", "(EXPLICIT_DATE (MONTH_OF_YEAR 10) (DAY_OF_MONTH 10) (YEAR_OF 2009))");
     assertAST("1980-1-2", "(EXPLICIT_DATE (MONTH_OF_YEAR 1) (DAY_OF_MONTH 2) (YEAR_OF 1980))");
-    assertAST("12/12/12", "(EXPLICIT_DATE (MONTH_OF_YEAR 12) (DAY_OF_MONTH 12) (YEAR_OF 12))");
+    assertAST("12/24/12", "(EXPLICIT_DATE (MONTH_OF_YEAR 12) (DAY_OF_MONTH 24) (YEAR_OF 12))");
     assertAST("3/4", "(EXPLICIT_DATE (MONTH_OF_YEAR 3) (DAY_OF_MONTH 4))");
+    assertAST("3/13", "(EXPLICIT_DATE (MONTH_OF_YEAR 3) (DAY_OF_MONTH 13))");
     assertAST("sun, 11/21/2010", "(EXPLICIT_DATE (MONTH_OF_YEAR 11) (DAY_OF_MONTH 21) (DAY_OF_WEEK 1) (YEAR_OF 2010))");
+  }
+
+  @Test
+  public void ambiguous_date() throws Exception {
+    _ruleName = "ambiguous_date";
+
+    assertAST("12/12/12", "(AMBIGUOUS_DATE (AMBIGUOUS_VALUE 12) (AMBIGUOUS_VALUE 12) (YEAR_OF 12))");
+    assertAST("1-2-13", "(AMBIGUOUS_DATE (AMBIGUOUS_VALUE 1) (AMBIGUOUS_VALUE 2) (YEAR_OF 13))");
+  }
+
+  @Test
+  public void dmy_date() throws Exception {
+    _ruleName = "dmy_date";
+
+    assertAST("24/12/12", "(EXPLICIT_DATE (MONTH_OF_YEAR 12) (DAY_OF_MONTH 24) (YEAR_OF 12))");
+    assertAST("18-2-13", "(EXPLICIT_DATE (MONTH_OF_YEAR 2) (DAY_OF_MONTH 18) (YEAR_OF 13))");
   }
 
   @Test
